@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Busboard Display</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Spline+Sans:wght@300;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div id="app" class="layout-horizontal theme-purple">
+      <section class="menu-panel">
+        <div class="menu-header">Menu</div>
+        <div class="menu-views" data-transition="shutter">
+          <div id="menu-view" class="menu-view is-active">
+            <h1 id="menu-title">Menu del Día</h1>
+            <pre id="menu-text">Cargando menu...</pre>
+          </div>
+          <div id="image-view" class="menu-view">
+            <img id="menu-image" alt="Featured menu" />
+            <div id="image-caption"></div>
+          </div>
+        </div>
+      </section>
+      <section class="board-panel">
+        <header class="board-header">
+          <div id="board-title">Llegadas de EMT Madrid</div>
+          <div id="board-clock"></div>
+        </header>
+        <table class="board-table">
+          <colgroup>
+            <col class="col-stop" />
+            <col class="col-line" />
+            <col class="col-destination" />
+            <col class="col-eta" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Parada</th>
+              <th>Línea</th>
+              <th>Destino</th>
+              <th>Estimado</th>
+            </tr>
+          </thead>
+          <tbody id="arrivals-body"></tbody>
+        </table>
+      </section>
+    </div>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
