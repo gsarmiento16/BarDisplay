@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import math
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, Header, HTTPException
@@ -15,9 +16,12 @@ from schemas.api_schemas import (
 )
 from services.emt_madrid_service import EmtMadridService
 from services.menu_service import MenuService
+from services.tenant_config_utils import normalize_menu_mode
 from services.tenant_service import TenantService
+from services.youtube_embed import build_youtube_embed_url
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.get("/api/tenants/{code}/config", response_model=TenantConfigResponse)
@@ -29,12 +33,23 @@ async def get_tenant_config(
     if not tenant or not config:
         raise HTTPException(status_code=404, detail="Tenant not found")
 
+    if config.show_youtube and not (config.youtube_url or "").strip():
+        raise HTTPException(
+            status_code=400, detail="youtubeUrl is required when showYoutube is true"
+        )
+
+    if config.show_youtube and config.youtube_url:
+        if not build_youtube_embed_url(config.youtube_url):
+            logger.warning("Invalid YouTube URL for tenant %s: %s", tenant.id, config.youtube_url)
+
     return TenantConfigResponse(
         tenant_name=tenant.name,
         layout=config.layout,
         refresh_seconds=config.refresh_seconds,
         swap_seconds=config.swap_seconds,
-        menu_mode=config.menu_mode,
+        menu_mode=normalize_menu_mode(config),
+        show_youtube=config.show_youtube,
+        youtube_url=config.youtube_url,
         theme=config.theme,
         board_header_text=config.board_header_text,
         stops=config.stops,

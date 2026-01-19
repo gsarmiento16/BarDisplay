@@ -16,7 +16,8 @@
     <div id="app" class="layout-horizontal theme-purple">
       <section class="menu-panel">
         <div class="menu-header">Menu</div>
-        <div class="menu-views" data-transition="shutter">
+        <div class="menu-content">
+          <div class="menu-views" data-transition="shutter">
           <div id="menu-view" class="menu-view is-active">
             <h1 id="menu-title">Menu del Día</h1>
             <pre id="menu-text">Cargando menu...</pre>
@@ -24,6 +25,11 @@
           <div id="image-view" class="menu-view">
             <img id="menu-image" alt="Featured menu" />
             <div id="image-caption"></div>
+          </div>
+          </div>
+          <div id="youtube-panel" class="youtube-panel is-hidden">
+            <div id="youtube-frame" class="youtube-frame"></div>
+            <div id="youtube-placeholder" class="youtube-placeholder">Video unavailable</div>
           </div>
         </div>
       </section>

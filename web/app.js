@@ -3,6 +3,7 @@ const state = {
   menu: null,
   view: "menu",
   arrivals: new Map(),
+  currentYoutubeEmbedSrc: null,
 };
 
 const appEl = document.getElementById("app");
@@ -16,6 +17,12 @@ const imageCaptionEl = document.getElementById("image-caption");
 const menuViewEl = document.getElementById("menu-view");
 const imageViewEl = document.getElementById("image-view");
 const menuViewsEl = document.querySelector(".menu-views");
+const menuPanelEl = document.querySelector(".menu-panel");
+const youtubePanelEl = document.getElementById("youtube-panel");
+const youtubeFrameEl = document.getElementById("youtube-frame");
+const youtubePlaceholderEl = document.getElementById("youtube-placeholder");
+
+let youtubeIframeEl = null;
 
 function getTenantCode() {
   const parts = window.location.pathname.split("/").filter(Boolean);
@@ -42,6 +49,108 @@ function applyLayout(layout) {
 function applyTheme(theme) {
   appEl.classList.remove("theme-purple", "theme-amber", "theme-dark");
   appEl.classList.add(`theme-${theme}`);
+}
+
+function buildYoutubeEmbedUrl(rawUrl) {
+  if (!rawUrl) {
+    return null;
+  }
+  let parsed;
+  try {
+    parsed = new URL(rawUrl);
+  } catch (error) {
+    return null;
+  }
+
+  const host = parsed.hostname.toLowerCase();
+  const path = parsed.pathname.replace(/^\/+/, "");
+  let videoId = null;
+
+  if (host.includes("youtu.be")) {
+    if (path) {
+      videoId = path.split("/")[0];
+    }
+  } else if (host.includes("youtube.com")) {
+    if (path === "watch") {
+      videoId = parsed.searchParams.get("v");
+    } else if (path.startsWith("embed/")) {
+      videoId = path.split("/")[1];
+    }
+  }
+
+  if (!videoId) {
+    return null;
+  }
+
+  return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
+}
+
+function setYoutubePlaceholder(message) {
+  youtubePlaceholderEl.textContent = message;
+  youtubePanelEl.classList.remove("is-loaded");
+}
+
+function handleYoutubeLoad() {
+  youtubePanelEl.classList.add("is-loaded");
+}
+
+function handleYoutubeError() {
+  setYoutubePlaceholder("Video unavailable");
+  console.warn("YouTube embed failed to load.");
+}
+
+function ensureYoutubeIframe() {
+  if (youtubeIframeEl) {
+    return youtubeIframeEl;
+  }
+
+  youtubeIframeEl = document.createElement("iframe");
+  youtubeIframeEl.allow = "autoplay; encrypted-media; picture-in-picture";
+  youtubeIframeEl.referrerPolicy = "strict-origin-when-cross-origin";
+  youtubeIframeEl.setAttribute("allowfullscreen", "");
+  youtubeIframeEl.addEventListener("load", handleYoutubeLoad);
+  youtubeIframeEl.addEventListener("error", handleYoutubeError);
+  youtubeFrameEl.appendChild(youtubeIframeEl);
+  return youtubeIframeEl;
+}
+
+function teardownYoutubeIframe() {
+  if (youtubeIframeEl) {
+    youtubeIframeEl.removeEventListener("load", handleYoutubeLoad);
+    youtubeIframeEl.removeEventListener("error", handleYoutubeError);
+    youtubeIframeEl.src = "about:blank";
+    youtubeIframeEl.remove();
+    youtubeIframeEl = null;
+  }
+  state.currentYoutubeEmbedSrc = null;
+  youtubePanelEl.classList.remove("is-loaded");
+}
+
+function updateYoutubePanel() {
+  if (!state.config || !state.config.showYoutube) {
+    menuPanelEl.classList.remove("has-youtube");
+    youtubePanelEl.classList.add("is-hidden");
+    teardownYoutubeIframe();
+    return;
+  }
+
+  menuPanelEl.classList.add("has-youtube");
+  youtubePanelEl.classList.remove("is-hidden");
+
+  const embedUrl = buildYoutubeEmbedUrl(state.config.youtubeUrl || "");
+  if (!embedUrl) {
+    setYoutubePlaceholder("Invalid YouTube URL");
+    teardownYoutubeIframe();
+    console.warn("Invalid YouTube URL:", state.config.youtubeUrl);
+    return;
+  }
+
+  setYoutubePlaceholder("Video unavailable");
+  const iframe = ensureYoutubeIframe();
+  if (state.currentYoutubeEmbedSrc !== embedUrl) {
+    state.currentYoutubeEmbedSrc = embedUrl;
+    iframe.src = embedUrl;
+  }
 }
 
 async function fetchJson(url) {
@@ -144,6 +253,7 @@ async function loadConfig(code) {
   applyLayout(layout);
   applyTheme(config.theme || "purple");
   boardTitleEl.textContent = config.boardHeaderText || "Bus arriving at nearby stops";
+  updateYoutubePanel();
   return config;
 }
 
@@ -168,7 +278,7 @@ async function loadMenu(code) {
 }
 
 function swapMenuView() {
-  if (!state.config || state.config.menuMode !== "menuAndImage") {
+  if (!state.config || state.config.showYoutube || state.config.menuMode !== "menuAndImage") {
     menuViewEl.classList.add("is-active");
     imageViewEl.classList.remove("is-active");
     return;

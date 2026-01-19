@@ -7,6 +7,8 @@ class TenantConfig(BaseModel):
     refresh_seconds: int
     swap_seconds: int
     menu_mode: str
+    show_youtube: bool = False
+    youtube_url: str | None = None
     theme: str
     board_header_text: str
     stops: list[str]

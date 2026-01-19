@@ -17,6 +17,8 @@ class TenantService:
             "refresh_seconds": self.settings.DEFAULT_REFRESH_SECONDS,
             "swap_seconds": self.settings.DEFAULT_SWAP_SECONDS,
             "menu_mode": "menuAndImage",
+            "show_youtube": False,
+            "youtube_url": None,
             "theme": self.settings.DEFAULT_THEME,
             "board_header_text": self.settings.DEFAULT_BOARD_HEADER_TEXT,
             "stops": [],
