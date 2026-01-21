@@ -9,6 +9,7 @@ from services.emt_madrid_service import EmtMadridService
 from services.menu_service import MenuService
 from services.telegram_service import TelegramService
 from services.tenant_service import TenantService
+from services.weather_service import WeatherService
 
 
 @lru_cache
@@ -48,6 +49,10 @@ def get_emt_service(
 ) -> EmtMadridService:
     client = request.app.state.http_client
     return EmtMadridService(client, settings)
+
+
+def get_weather_service(request: Request) -> WeatherService:
+    return request.app.state.weather_service
 
 
 def get_telegram_service(

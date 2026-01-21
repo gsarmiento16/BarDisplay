@@ -2,9 +2,15 @@ import asyncio
 import logging
 import math
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Response
 
-from app.dependencies import get_emt_service, get_menu_service, get_settings, get_tenant_service
+from app.dependencies import (
+    get_emt_service,
+    get_menu_service,
+    get_settings,
+    get_tenant_service,
+    get_weather_service,
+)
 from app.settings import Settings
 from schemas.api_schemas import (
     AdminCreateTenantRequest,
@@ -13,12 +19,15 @@ from schemas.api_schemas import (
     ArrivalsResponse,
     MenuResponse,
     TenantConfigResponse,
+    WeatherWidgetDto,
 )
 from services.emt_madrid_service import EmtMadridService
 from services.menu_service import MenuService
 from services.tenant_config_utils import normalize_menu_mode
 from services.tenant_service import TenantService
+from services.weather_service import WeatherService
 from services.youtube_embed import build_youtube_embed_url
+from infrastructure.clients.openweather_client import OpenWeatherClientError
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -28,6 +37,7 @@ logger = logging.getLogger(__name__)
 async def get_tenant_config(
     code: str,
     tenant_service: TenantService = Depends(get_tenant_service),
+    settings: Settings = Depends(get_settings),
 ) -> TenantConfigResponse:
     tenant, config = await tenant_service.get_tenant_and_config(code)
     if not tenant or not config:
@@ -50,10 +60,43 @@ async def get_tenant_config(
         menu_mode=normalize_menu_mode(config),
         show_youtube=config.show_youtube,
         youtube_url=config.youtube_url,
+        show_weather=config.show_weather,
+        weather_lang=config.weather_lang,
+        weather_lat=config.weather_lat,
+        weather_lon=config.weather_lon,
+        weather_refresh_seconds=settings.WEATHER_REFRESH_SECONDS,
         theme=config.theme,
         board_header_text=config.board_header_text,
         stops=config.stops,
     )
+
+
+@router.get(
+    "/api/tenants/{code}/weather",
+    response_model=WeatherWidgetDto,
+    responses={204: {"description": "No Content"}},
+)
+async def get_weather(
+    code: str,
+    tenant_service: TenantService = Depends(get_tenant_service),
+    weather_service: WeatherService = Depends(get_weather_service),
+) -> WeatherWidgetDto | Response:
+    tenant, config = await tenant_service.get_tenant_and_config(code)
+    if not tenant or not config:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+
+    if not config.show_weather:
+        return Response(status_code=204)
+
+    try:
+        weather = await weather_service.get_weather(code, config)
+    except OpenWeatherClientError:
+        raise HTTPException(status_code=502, detail="Failed to fetch weather")
+
+    if not weather:
+        return Response(status_code=204)
+
+    return weather
 
 
 @router.get("/api/tenants/{code}/arrivals", response_model=ArrivalsResponse)

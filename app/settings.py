@@ -10,6 +10,12 @@ class Settings(BaseSettings):
     EMT_ACCESS_TOKEN: str
     EMT_TIMEOUT_SECONDS: int = 10
 
+    OPENWEATHER_BASE_URL: str = "https://api.openweathermap.org"
+    OPENWEATHER_API_KEY: str
+    OPENWEATHER_UNITS: str = "metric"
+    WEATHER_REFRESH_SECONDS: int = 600
+    WEATHER_TIMEOUT_SECONDS: int = 8
+
     DEFAULT_REFRESH_SECONDS: int = 60
     DEFAULT_SWAP_SECONDS: int = 30
     DEFAULT_LAYOUT: str = "horizontal"

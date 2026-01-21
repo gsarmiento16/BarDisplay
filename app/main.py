@@ -10,6 +10,7 @@ from app.routes.display_routes import router as display_router
 from app.routes.tenant_api_routes import router as tenant_router
 from app.routes.telegram_routes import router as telegram_router
 from infrastructure.clients.http_client import HttpClient
+from infrastructure.clients.openweather_client import OpenWeatherClient
 from infrastructure.clients.telegram_client import TelegramClient
 from infrastructure.persistence.mongo import MongoManager
 from infrastructure.repositories.menu_repository_mongo import MenuRepositoryMongo
@@ -18,6 +19,7 @@ from infrastructure.repositories.tenant_repository_mongo import TenantRepository
 from services.menu_service import MenuService
 from services.telegram_service import TelegramService
 from services.tenant_service import TenantService
+from services.weather_service import WeatherService
 
 
 @asynccontextmanager
@@ -35,6 +37,12 @@ async def lifespan(app: FastAPI):
         base_url=settings.EMT_BASE_URL,
         timeout_seconds=settings.EMT_TIMEOUT_SECONDS,
     )
+    app.state.openweather_http_client = HttpClient(
+        base_url=settings.OPENWEATHER_BASE_URL,
+        timeout_seconds=settings.WEATHER_TIMEOUT_SECONDS,
+    )
+    app.state.openweather_client = OpenWeatherClient(app.state.openweather_http_client, settings)
+    app.state.weather_service = WeatherService(app.state.openweather_client, settings)
     if settings.TELEGRAM_BOT_TOKEN:
         app.state.telegram_client = TelegramClient(settings.TELEGRAM_BOT_TOKEN)
     else:
@@ -67,6 +75,7 @@ async def lifespan(app: FastAPI):
         await app.state.telegram_polling_task
 
     await app.state.http_client.close()
+    await app.state.openweather_http_client.close()
     if app.state.telegram_client:
         await app.state.telegram_client.close()
     app.state.mongo_client.close()

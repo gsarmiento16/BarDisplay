@@ -38,7 +38,8 @@
           <div id="board-title">Llegadas de EMT Madrid</div>
           <div id="board-clock"></div>
         </header>
-        <table class="board-table">
+        <div class="board-table-wrap">
+          <table class="board-table">
           <colgroup>
             <col class="col-stop" />
             <col class="col-line" />
@@ -54,7 +55,25 @@
             </tr>
           </thead>
           <tbody id="arrivals-body"></tbody>
-        </table>
+          </table>
+        </div>
+        <div id="weather-bar" class="weather-bar is-hidden">
+          <div class="weather-left">
+            <div id="weather-icon" class="weather-icon"></div>
+            <div class="weather-temp">
+              <div id="weather-temp" class="weather-temp-value">--</div>
+              <div id="weather-feels" class="weather-temp-feels">Feels --</div>
+            </div>
+          </div>
+          <div class="weather-right">
+            <div id="weather-desc" class="weather-desc">--</div>
+            <div class="weather-meta">
+              <span id="weather-humidity">--</span>
+              <span id="weather-wind">--</span>
+              <span id="weather-updated">--</span>
+            </div>
+          </div>
+        </div>
       </section>
     </div>
     <script src="/static/app.js"></script>
